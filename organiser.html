@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BMW Game – Organiser</title>
+<style>
+:root{--bg:#06222e;--g:rgba(255,255,255,.07);--bd:rgba(255,255,255,.16);--teal:#22d3c5;--gold:#ffc83d;--mut:#9cc5d2;--tx:#eaf7fb}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#08303f,#041a24) fixed;color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.w{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:17px;margin:22px 0 8px}
+.mut{color:var(--mut);font-size:13px}
+.card{background:var(--g);border:1px solid var(--bd);border-radius:16px;padding:14px}
+input,select,button{font:inherit;color:var(--tx)}
+input,select{background:rgba(255,255,255,.1);border:1.5px solid var(--bd);border-radius:12px;padding:10px 12px;outline:0}
+select option{color:#000}
+input:focus{border-color:var(--teal)}
+button{background:linear-gradient(135deg,#22d3c5,#1fa2d6);color:#04302c;font-weight:800;border:0;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.g{background:var(--g);color:var(--tx);border:1px solid var(--bd);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.st{background:var(--g);border:1px solid var(--bd);border-radius:14px;padding:12px}.st b{display:block;font-size:26px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.09)}
+th{color:var(--mut);font-weight:600;font-size:12px}
+.sc{overflow-x:auto}
+.bar{height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;min-width:80px}.bar i{display:block;height:100%;background:#ff7a7a}
+.chip{display:inline-block;font-size:11px;font-weight:800;border-radius:7px;padding:1px 7px;color:#111}
+.t1{color:var(--gold)}.t2{color:var(--teal)}.t3{color:#ff9a4a}
+#err{color:#ff9a9a;margin:8px 0}
+.tabs{display:flex;gap:6px;margin:14px 0 4px}.tabs button{padding:8px 14px}.tabs button.on{background:linear-gradient(135deg,#22d3c5,#1fa2d6);color:#04302c}
+</style></head><body><div class="w">
+<h1>BMW Game: Organiser</h1>
+<div class="mut">Only for the organiser. Do not share this page link with staff.</div>
+<div class="card" id="login" style="margin-top:14px"><div class="row"><input id="key" type="password" placeholder="Organiser passcode" style="flex:1;min-width:200px"><button id="go">Open</button></div><div id="err"></div></div>
+<div id="main" style="display:none">
+  <div class="row" style="margin-top:12px"><button class="g" id="ref">Refresh</button><button class="g" id="csv">Download CSV</button><span class="mut" id="upd"></span></div>
+  <div class="stats" id="stats"></div>
+  <div class="tabs"><button data-m="all" class="on">All modes</button><button data-m="easy">Easy</button><button data-m="hard">Hard</button></div>
+  <div class="row"><input id="q" placeholder="Search name, ID or department" style="flex:1;min-width:200px"></div>
+  <h2>Leaderboard (best attempt per person)</h2>
+  <div class="card sc"><table id="lb"></table></div>
+  <h2>Most confused items</h2>
+  <div class="mut">Items staff get wrong most often. Use this for training.</div>
+  <div class="card sc" style="margin-top:8px"><table id="cf"></table></div>
+  <h2>Department summary</h2>
+  <div class="card sc"><table id="dp"></table></div>
+</div>
+</div>
+<script>
+// Paste the SAME Google Apps Script Web App URL as in index.html
+const API_URL='';
+const BINCOL={Y:['Yellow Bag','#ffe600'],YC:['Yellow cytotoxic bag','#ffd000'],R:['Red Bag','#f04545'],W:['White Translucent Puncture-Proof Container','#f4f8fa'],B:['Blue Box','#14a9e8'],K:['BLACK WASTE BIN','#9a9a9a']};
+const ITEMS=[["Human tissues / organs","Y"],["Placenta","Y"],["Blood-soaked cotton","Y"],["Blood-soaked dressing","Y"],["Used bandage","Y"],["Plaster cast","Y"],["Blood-soaked gauze","Y"],["Culture plate","Y"],["Laboratory specimen","Y"],["Sputum culture","Y"],["Infected patient swab stick","Y"],["Blood-filled vacutainer","Y"],["Sputum C/S container","Y"],["Chemotherapy drug waste","YC"],["Chemo medication vial","YC"],["Chemo syringe","YC"],["Chemo medication box","YC"],["Gloves used in chemo preparation","YC"],["Gauze used in chemotherapy","YC"],["Cotton used during chemo patient cannulation","YC"],["Chemo patient cannula","YC"],["Xylocaine jelly","YC"],["Expired drugs","YC"],["IV tubing","R"],["IV set","R"],["Urine bag","R"],["Catheter","R"],["Syringe without needle","R"],["Used gloves (ward use)","R"],["Empty vial (plastic)","R"],["Saline drip (empty)","R"],["Needle","W"],["Scalpel","W"],["Blade","W"],["Metal sharps","W"],["Lancet","W"],["Insulin syringe","W"],["Needle attached to Insulin Lantus","W"],["Stapler pin","W"],["Broken glass","B"],["Medicine vial (glass)","B"],["Ampoule","B"],["Orthopedic implant","B"],["Metal implant","B"],["General waste","K"],["Water bottle","K"],["Medicine wrapper","K"],["Paper","K"],["Leftover food","K"],["Tissue paper","K"],["Paper tea cup","K"],["Newspaper","K"],["Snack wrapper","K"],["Cardboard box","K"],["Sweeping dust","K"],["Banana peel","K"],["Juice packet","K"],["Dry leaves","K"],["Flower garland","K"]];
+let ROWS=[],MODE='all';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function load(){
+  if(!API_URL){$('err').textContent='API_URL is empty. Paste your Apps Script URL in this file.';return false}
+  const key=$('key').value||sessionStorage.getItem('bmw_org')||'';
+  $('err').textContent='Loading…';
+  try{
+    const r=await (await fetch(API_URL+'?action=board&key='+encodeURIComponent(key))).json();
+    if(!r.ok){$('err').textContent=r.error==='bad key'?'Wrong passcode.':'Error: '+r.error;return false}
+    sessionStorage.setItem('bmw_org',key);ROWS=r.rows;$('login').style.display='none';$('main').style.display='block';$('upd').textContent='Updated '+new Date().toLocaleTimeString();render();return true;
+  }catch(e){$('err').textContent='Could not connect. Check the URL and internet.';return false}
+}
+function best(rows){
+  const m={};
+  rows.forEach(r=>{const k=r.id+'|'+r.mode;if(!m[k]||r.score>m[k].score)m[k]=Object.assign({},r,{n:0});});
+  rows.forEach(r=>{m[r.id+'|'+r.mode].n++});
+  return Object.values(m).sort((a,b)=>b.score-a.score||a.sec-b.sec);
+}
+function render(){
+  const rows=ROWS.filter(r=>MODE==='all'||r.mode===MODE),q=$('q').value.trim().toLowerCase();
+  const people=new Set(rows.map(r=>r.id)),champs=rows.filter(r=>r.stars===3).length;
+  const avg=rows.length?Math.round(rows.reduce((a,r)=>a+Number(r.score),0)/rows.length):0;
+  $('stats').innerHTML=[['Attempts',rows.length],['Players',people.size],['Average score',avg],['BMW Champion results',champs]].map(x=>`<div class="st"><span class="mut">${x[0]}</span><b>${x[1]}</b></div>`).join('');
+  let b=best(rows);if(q)b=b.filter(r=>(r.name+r.id+r.dept).toLowerCase().includes(q));
+  $('lb').innerHTML='<tr><th>#</th><th>Name</th><th>ID</th><th>Department</th><th>Mode</th><th>Best score</th><th>Correct</th><th>Title</th><th>Tries</th></tr>'+
+    b.slice(0,200).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.id)}</td><td>${esc(r.dept)}</td><td>${esc(r.mode)}</td><td><b>${r.score}</b></td><td>${r.correct}/${r.total}</td><td class="t${r.stars}">${esc(r.title)}</td><td>${r.n}</td></tr>`).join('');
+  // confused items
+  const s={};
+  rows.forEach(r=>{let d=[];try{d=JSON.parse(r.det)}catch(e){}d.forEach(x=>{if(x.o<0)return;const a=s[x.i]||(s[x.i]={n:0,w:0,c:{}});a.n++;if(!x.o){a.w++;a.c[x.c]=(a.c[x.c]||0)+1}})});
+  const list=Object.keys(s).map(i=>({i,n:s[i].n,w:s[i].w,p:s[i].w/s[i].n,c:s[i].c})).filter(x=>x.n>=3).sort((a,b)=>b.p-a.p).slice(0,15);
+  $('cf').innerHTML='<tr><th>Item</th><th>Correct bin</th><th>Shown</th><th>Wrong</th><th>Wrong %</th><th>Common wrong choice</th></tr>'+list.map(x=>{
+    const it=ITEMS[x.i]||['?','K'],cb=BINCOL[it[1]],top=Object.entries(x.c).sort((a,b)=>b[1]-a[1])[0],tb=top&&BINCOL[top[0]]?BINCOL[top[0]]:null;
+    return `<tr><td>${esc(it[0])}</td><td><span class="chip" style="background:${cb[1]}">${cb[0]}</span></td><td>${x.n}</td><td>${x.w}</td><td><div class="bar"><i style="width:${Math.round(x.p*100)}%"></i></div>${Math.round(x.p*100)}%</td><td>${tb?`<span class="chip" style="background:${tb[1]}">${tb[0]}</span>`:'Time up'}</td></tr>`}).join('')||'<tr><td>Not enough data yet (needs 3 plays per item).</td></tr>';
+  // departments
+  const d={};best(rows).forEach(r=>{const a=d[r.dept]||(d[r.dept]={p:new Set(),sum:0,n:0});a.p.add(r.id);a.sum+=Number(r.score);a.n++});
+  $('dp').innerHTML='<tr><th>Department</th><th>Players</th><th>Average best score</th></tr>'+Object.entries(d).sort((a,b)=>b[1].sum/b[1].n-a[1].sum/a[1].n).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.p.size}</td><td>${Math.round(v.sum/v.n)}</td></tr>`).join('');
+}
+$('go').onclick=load;$('key').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
+$('ref').onclick=load;$('q').oninput=render;
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{MODE=b.dataset.m;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));render()});
+$('csv').onclick=()=>{
+  const h=['Time','ID','Name','Department','Type','Mode','Score','Correct','Total','Stars','Title','Seconds'];
+  const c=[h.join(',')].concat(ROWS.map(r=>[r.t,r.id,r.name,r.dept,r.type,r.mode,r.score,r.correct,r.total,r.stars,r.title,r.sec].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c.join('\n')],{type:'text/csv'}));a.download='bmw_game_results.csv';a.click();
+};
+if(sessionStorage.getItem('bmw_org')){$('key').value=sessionStorage.getItem('bmw_org');load()}
+</script></body></html>
